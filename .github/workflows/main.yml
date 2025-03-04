@@ -42,8 +42,8 @@ jobs:
     - name: Push to Docker Hub
       if: github.ref == 'refs/heads/main'
       run: |
-        docker tag bestbest/be-validate-image ${{ secrets.DOCKER_USERNAME }}/bestbest/be-validate-image:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/bestbest/be-validate-image:latest
+        docker tag bestbest/be-validate-image bestbest/be-validate-image:v1.0.0
+        docker push bestbest/be-validate-image:v1.0.0
 
     - name: Deploy to production
       if: github.ref == 'refs/heads/main'
