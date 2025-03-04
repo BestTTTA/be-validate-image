@@ -7,7 +7,7 @@ import numpy as np
 ENCODINGS_DIR = "Encoded_Faces"
 ENCODINGS_FILE = os.path.join(ENCODINGS_DIR, "face_encodings.pkl")
 VALID_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp')
-FACE_SIMILARITY_THRESHOLD = 0.6  #ปรับค่าไกล้ 0.1 มีความแม่นมาก
+FACE_SIMILARITY_THRESHOLD = 0.2  #ปรับค่าไกล้ 0.1 มีความแม่นมาก
 
 def ensure_encodings_dir():
     if not os.path.exists(ENCODINGS_DIR):
