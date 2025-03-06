@@ -7,15 +7,26 @@ from utils.face_encoding_manager import encode_image_directory, save_face_encodi
 IMAGE_DATABASE_DIR = "../Selected_Images"
 
 # Encode and save face data
+import time
+
 print("📥 กำลังโหลดและบันทึกข้อมูลใบหน้า...")
+start_time = time.time()
 face_encodings, image_paths = encode_image_directory(IMAGE_DATABASE_DIR)
+encoding_time = time.time() - start_time
+print(f"⏱️  Encoding completed in {encoding_time:.2f} seconds")
+
+start_time = time.time()
 save_face_encodings(face_encodings, image_paths)
+saving_time = time.time() - start_time
+print(f"⏱️  Saving completed in {saving_time:.2f} seconds")
 
 # ทดสอบอัปโหลดภาพเพื่อค้นหา
 input_image_path = "1 (1).jpeg"  
 print(f"🔍 กำลังค้นหาภาพที่ตรงกับ {input_image_path}...")
-
+start_time = time.time()
 matched_images = search_face(input_image_path)
+search_time = time.time() - start_time
+print(f"⏱️  Search completed in {search_time:.2f} seconds")
 
 # แสดงผลลัพธ์
 if matched_images:

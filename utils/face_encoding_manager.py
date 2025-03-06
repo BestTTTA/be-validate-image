@@ -17,12 +17,24 @@ def ensure_encodings_dir():
 def save_face_encodings(face_encodings, image_paths):
     ensure_encodings_dir()
     data = {
-        'face_encodings': face_encodings,
-        'image_paths': image_paths
+        'face_encodings': face_encodings if isinstance(face_encodings, list) else [],
+        'image_paths': image_paths if isinstance(image_paths, list) else []
     }
-    with open(ENCODINGS_FILE, 'wb') as f:
-        pickle.dump(data, f)
-    print(f"✅ บันทึกข้อมูลใบหน้าสำเร็จ: {len(face_encodings)} ใบหน้า")
+    
+    try:
+        with open(ENCODINGS_FILE, 'wb') as f:
+            pickle.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
+        print(f"✅ บันทึกข้อมูลใบหน้าสำเร็จ: {len(data['face_encodings'])} ใบหน้า")
+    except Exception as e:
+        print(f"❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล: {str(e)}")
+        # If save fails, ensure we don't leave a partially written file
+        if os.path.exists(ENCODINGS_FILE):
+            try:
+                os.remove(ENCODINGS_FILE)
+            except:
+                pass
 
 def load_face_encodings():
     if not os.path.exists(ENCODINGS_FILE):
@@ -34,10 +46,34 @@ def load_face_encodings():
     print(f"✅ โหลดข้อมูลใบหน้าสำเร็จ: {len(data['face_encodings'])} ใบหน้า")
     return data['face_encodings'], data['image_paths']
 
+def load_encodings():
+    """Load face encodings from a file and return in the format expected by router."""
+    default_data = {'face_encodings': [], 'image_paths': []}
+    
+    if not os.path.exists(ENCODINGS_FILE):
+        print("❌ ไม่พบไฟล์ข้อมูลใบหน้าที่บันทึกไว้")
+        return default_data
+    
+    try:
+        with open(ENCODINGS_FILE, 'rb') as f:
+            try:
+                data = pickle.load(f)
+                if not isinstance(data, dict) or 'face_encodings' not in data or 'image_paths' not in data:
+                    print("❌ รูปแบบไฟล์ข้อมูลใบหน้าไม่ถูกต้อง")
+                    return default_data
+                print(f"✅ โหลดข้อมูลใบหน้าสำเร็จ: {len(data['face_encodings'])} ใบหน้า")
+                return data
+            except (EOFError, pickle.UnpicklingError) as e:
+                print(f"❌ ไม่สามารถโหลดข้อมูลใบหน้าได้: {str(e)}")
+                return default_data
+    except Exception as e:
+        print(f"❌ เกิดข้อผิดพลาดในการเปิดไฟล์: {str(e)}")
+        return default_data
+
 def encode_image_directory(image_dir):
     face_encodings = []
     image_paths = []
-    # Convert image_dir to absolute path
+
     image_dir = os.path.abspath(image_dir)
     total_files = len([f for f in os.listdir(image_dir) if f.lower().endswith(VALID_IMAGE_EXTENSIONS)])
     processed = 0

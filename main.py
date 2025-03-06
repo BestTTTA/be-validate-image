@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from Check_image.router import router as check_image_router
+from Upload_images.router import router as upload_image_router
 
 app = FastAPI(
     title="Face Recognition API",
@@ -8,17 +9,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include the check image router
 app.include_router(check_image_router, prefix="/api/v1")
+app.include_router(upload_image_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
