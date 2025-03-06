@@ -31,9 +31,9 @@ logger.addHandler(ch)
 logger.propagate = True
 
 # Redis connection settings
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')  # Default to localhost for local development
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_HOST = os.getenv('REDIS_HOST')  # Default to localhost for local development
+REDIS_PORT = int(os.getenv('REDIS_PORT'))
+REDIS_DB = int(os.getenv('REDIS_DB'))
 
 # Test Redis connection
 try:
