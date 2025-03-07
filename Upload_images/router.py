@@ -17,7 +17,7 @@ from utils.celery_app import celery_app
 MINIO_ENDPOINT = "119.59.99.192:9000"
 MINIO_ACCESS_KEY = "sut-skin"
 MINIO_SECRET_KEY = "sut-skin-2024"
-BUCKET_NAME = "where-my-images"
+BUCKET_NAME = "test-where-my-images"
 
 # Initialize MinIO client
 minio_client = Minio(
@@ -59,7 +59,7 @@ def save_encodings(data):
         pickle.dump(data, f)
     print(f"✅ บันทึกข้อมูลใบหน้าสำเร็จ: {len(data['face_encodings'])} ใบหน้า")
 
-@celery_app.task
+@celery_app.task(name='Upload_images.router.process_face_encoding')
 def process_face_encoding(temp_file_path, unique_filename, original_filename):
     try:
         logger = logging.getLogger('celery')

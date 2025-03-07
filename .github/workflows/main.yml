@@ -60,3 +60,9 @@ jobs:
           docker rm -f be-validate-image || true
           docker pull bestbest/be-validate-image:v1.0.2
           docker run -d --name be-validate-image -p 1080:8000 bestbest/be-validate-image:v1.0.2
+          
+          # Wait for container to start
+          sleep 10
+          
+          # Start Celery worker in the container
+          docker exec -d be-validate-image celery -A utils.celery_app worker --loglevel=info

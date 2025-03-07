@@ -38,9 +38,11 @@ except RedisError as e:
     raise
 
 redis_url = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+# Add this near the top of the file, after imports
 celery_app = Celery('face_detection',
                     broker=redis_url,
-                    backend=redis_url)
+                    backend=redis_url,
+                    include=['Upload_images.router'])  # Add this line
 
 celery_app.conf.update(
     task_serializer='pickle',
