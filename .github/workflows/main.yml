@@ -26,9 +26,6 @@ jobs:
 
     - name: Create .env file
       run: |
-        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
-        echo "REDIS_DB=${{ secrets.REDIS_DB }}" >> .env
         echo "MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}" >> .env
         echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> .env
         echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> .env
@@ -62,7 +59,4 @@ jobs:
         script: |
           docker rm -f be-validate-image || true
           docker pull bestbest/be-validate-image:v1.0.2
-          docker pull bestbest/be-validate-image:v1.0.2
-          docker stop bestbest/be-validate-image || true
-          docker rm bestbest/be-validate-image || true
           docker run -d --name be-validate-image -p 1080:8000 bestbest/be-validate-image:v1.0.2
