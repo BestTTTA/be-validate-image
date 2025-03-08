@@ -31,7 +31,7 @@ RUN mkdir -p /app/Encoded_Faces && \
 
 # Copy supervisor configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chown appuser:appgroup /etc/supervisor/conf.d/supervisord.conf
+RUN chown -R appuser:appgroup /etc/supervisor/
 
 # Switch to non-root user
 USER appuser
