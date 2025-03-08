@@ -59,20 +59,35 @@ jobs:
         script: |
           docker rm -f be-validate-image || true
           docker pull bestbest/be-validate-image:v1.0.2
-          docker run -d --name be-validate-image -p 1080:8000 bestbest/be-validate-image:v1.0.2
           
-          # Wait for container to start
+          # Run container with network host and environment variables
+          docker run -d --name be-validate-image \
+            --network host \
+            -p 1080:8000 \
+            bestbest/be-validate-image:v1.0.2
+          
+          # Check if container is running
+          if ! docker ps | grep -q be-validate-image; then
+            echo "Container failed to start. Checking logs:"
+            docker logs be-validate-image
+            exit 1
+          fi
+          
+          # Wait for application to initialize
           sleep 10
           
           # Start Celery worker with non-root user
           docker exec -d -u appuser be-validate-image celery -A utils.celery_app worker --loglevel=info
           
-          # Verify Celery worker is running
+          # Verify Celery worker
           sleep 5
           if ! docker exec be-validate-image ps aux | grep -q "[c]elery worker"; then
-              echo "Celery worker failed to start"
-              exit 1
+            echo "Celery worker failed to start. Checking logs:"
+            docker logs be-validate-image
+            exit 1
           fi
+          
+          echo "Deployment completed successfully"
           
           # Check logs for any errors
           docker logs be-validate-image | grep -i error || true
