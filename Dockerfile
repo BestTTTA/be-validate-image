@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 # Create non-root user and group
 RUN groupadd -r appgroup && \
-    useradd -r -g appgroup -d /app -s /sbin/nologin -c "Docker image user" appuser && \
+    useradd -r -g appgroup -d /app -s /bin/bash -c "Docker image user" appuser && \
     chown -R appuser:appgroup /app
 
 # Copy requirements and install Python dependencies
@@ -28,8 +28,11 @@ RUN chown -R appuser:appgroup /app
 RUN mkdir -p /app/Encoded_Faces && \
     chown -R appuser:appgroup /app/Encoded_Faces
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Switch to non-root user
 USER appuser
 
-# Run the application
-CMD ["python","-m","uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run both services
+CMD ["./start.sh"]
