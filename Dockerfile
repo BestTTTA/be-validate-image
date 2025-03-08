@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libopenblas-dev \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user and group
@@ -28,13 +29,12 @@ RUN chown -R appuser:appgroup /app
 RUN mkdir -p /app/Encoded_Faces && \
     chown -R appuser:appgroup /app/Encoded_Faces
 
-# Copy and set permissions for start script
-COPY start.sh .
-RUN chmod +x start.sh && \
-    chown appuser:appgroup start.sh
+# Copy supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chown appuser:appgroup /etc/supervisor/conf.d/supervisord.conf
 
 # Switch to non-root user
 USER appuser
 
-# Run both services
-CMD ["./start.sh"]
+# Run supervisor
+CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
