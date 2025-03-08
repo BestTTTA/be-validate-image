@@ -25,7 +25,7 @@ logger.addHandler(ch)
 logger.propagate = True
 
 
-REDIS_HOST = "119.59.99.192"
+REDIS_HOST = "localhost"
 REDIS_PORT = 6379
 REDIS_DB = 0
 

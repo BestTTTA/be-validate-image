@@ -64,5 +64,15 @@ jobs:
           # Wait for container to start
           sleep 10
           
-          # Start Celery worker in the container
-          docker exec -d be-validate-image celery -A utils.celery_app worker --loglevel=info
+          # Start Celery worker with non-root user
+          docker exec -d -u appuser be-validate-image celery -A utils.celery_app worker --loglevel=info
+          
+          # Verify Celery worker is running
+          sleep 5
+          if ! docker exec be-validate-image ps aux | grep -q "[c]elery worker"; then
+              echo "Celery worker failed to start"
+              exit 1
+          fi
+          
+          # Check logs for any errors
+          docker logs be-validate-image | grep -i error || true
