@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libopenblas-dev \
     supervisor \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user and group
@@ -29,12 +30,17 @@ RUN chown -R appuser:appgroup /app
 RUN mkdir -p /app/Encoded_Faces && \
     chown -R appuser:appgroup /app/Encoded_Faces
 
-# Copy supervisor configuration
+# Make start script executable and ensure correct line endings
+RUN chmod +x start.sh && \
+    sed -i 's/\r$//' start.sh
+
+# Set up supervisor configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chown -R appuser:appgroup /etc/supervisor/
+RUN chown root:root /etc/supervisor/conf.d/supervisord.conf
 
-# Switch to non-root user
-USER appuser
+# Expose the port
+EXPOSE 8000
 
-# Run supervisor
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Switch to root for supervisor (it will launch app processes as appuser)
+# CMD to run supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

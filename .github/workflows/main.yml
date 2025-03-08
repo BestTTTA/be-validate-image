@@ -30,10 +30,12 @@ jobs:
         echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> .env
         echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> .env
         echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
+        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
 
     - name: Build Docker image
       run: |
-        docker build --build-arg ENV_FILE=.env -t bestbest/be-validate-image .
+        docker build -t bestbest/be-validate-image:v1.0.2 .
 
     - name: Login to Docker Hub
       if: github.ref == 'refs/heads/main'
@@ -45,7 +47,6 @@ jobs:
     - name: Push to Docker Hub
       if: github.ref == 'refs/heads/main'
       run: |
-        docker tag bestbest/be-validate-image bestbest/be-validate-image:v1.0.2
         docker push bestbest/be-validate-image:v1.0.2
 
     - name: Deploy to production
@@ -57,32 +58,33 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         port: 22
         script: |
+          # Stop and remove existing container
           docker rm -f be-validate-image || true
+          
+          # Pull the latest image
           docker pull bestbest/be-validate-image:v1.0.2
           
-          # Run container with network host and environment variables
+          # Create .env file with secrets
+          cat > .env << EOL
+          MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}
+          MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}
+          BUCKET_NAME=${{ secrets.BUCKET_NAME }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          EOL
+          
+          # Run container with environment variables from file
           docker run -d --name be-validate-image \
-            --network host \
+            --restart unless-stopped \
             -p 1080:8000 \
+            --env-file .env \
             bestbest/be-validate-image:v1.0.2
           
           # Check if container is running
+          sleep 5
           if ! docker ps | grep -q be-validate-image; then
             echo "Container failed to start. Checking logs:"
-            docker logs be-validate-image
-            exit 1
-          fi
-          
-          # Wait for application to initialize
-          sleep 10
-          
-          # Start Celery worker with non-root user
-          docker exec -d -u appuser be-validate-image celery -A utils.celery_app worker --loglevel=info
-          
-          # Verify Celery worker
-          sleep 5
-          if ! docker exec be-validate-image ps aux | grep -q "[c]elery worker"; then
-            echo "Celery worker failed to start. Checking logs:"
             docker logs be-validate-image
             exit 1
           fi
