@@ -30,17 +30,45 @@ RUN chown -R appuser:appgroup /app
 RUN mkdir -p /app/Encoded_Faces && \
     chown -R appuser:appgroup /app/Encoded_Faces
 
-# Make start script executable and ensure correct line endings
-RUN chmod +x start.sh && \
-    sed -i 's/\r$//' start.sh
+# Create a default supervisord.conf if it doesn't exist
+RUN mkdir -p /etc/supervisor/conf.d/
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf || echo "[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
 
-# Set up supervisor configuration
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chown root:root /etc/supervisor/conf.d/supervisord.conf
+[program:uvicorn]
+command=uvicorn app.main:app --host 0.0.0.0 --port 8000
+directory=/app
+user=appuser
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/supervisor/uvicorn.err.log
+stdout_logfile=/var/log/supervisor/uvicorn.out.log
+startsecs=10
+
+[program:celery]
+command=celery -A face_detection worker --loglevel=info
+directory=/app
+user=appuser
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/supervisor/celery.err.log
+stdout_logfile=/var/log/supervisor/celery.out.log
+startsecs=10
+
+[program:tail]
+command=tail -f /dev/null
+user=appuser
+autostart=true
+autorestart=true" > /etc/supervisor/conf.d/supervisord.conf
+
+# Create directory for supervisor logs
+RUN mkdir -p /var/log/supervisor && chown -R appuser:appgroup /var/log/supervisor
 
 # Expose the port
 EXPOSE 8000
 
-# Switch to root for supervisor (it will launch app processes as appuser)
 # CMD to run supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
