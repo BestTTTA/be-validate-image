@@ -45,16 +45,17 @@ celery_app = Celery('face_detection',
                     include=['Upload_images.router'])  # Add this line
 
 celery_app.conf.update(
+    broker_connection_retry_on_startup=True,  # Add this line
     task_serializer='pickle',
     accept_content=['pickle', 'json'],
     result_serializer='pickle',
     task_track_started=True,
-    task_time_limit=300,  
+    task_time_limit=300,
     worker_max_tasks_per_child=100,
     worker_prefetch_multiplier=1,
-    task_ignore_result=False,  
-    task_store_errors_even_if_ignored=True,  
-    worker_redirect_stdouts=False,  
+    task_ignore_result=False,
+    task_store_errors_even_if_ignored=True,
+    worker_redirect_stdouts=False,
     worker_log_format='[%(asctime)s: %(levelname)s/%(processName)s] %(message)s',
     worker_task_log_format='[%(asctime)s: %(levelname)s/%(processName)s][%(task_name)s(%(task_id)s)] %(message)s'
 )
