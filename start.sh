@@ -1,12 +1,15 @@
 #!/bin/bash
-# Start the FastAPI application
+
+# Start the FastAPI application in the background
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+UVICORN_PID=$!
 
-# Wait for FastAPI to start
-sleep 5
+# Start Celery worker in the background
+celery -A utils.celery_app worker --loglevel=info &
+CELERY_PID=$!
 
-# Start Celery worker
-celery -A utils.celery_app worker --loglevel=info
+# Trap SIGTERM and SIGINT
+trap "kill $UVICORN_PID $CELERY_PID; exit" SIGTERM SIGINT
 
-# Keep the container running
-wait
+# Wait for both processes
+wait $UVICORN_PID $CELERY_PID

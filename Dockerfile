@@ -28,8 +28,10 @@ RUN chown -R appuser:appgroup /app
 RUN mkdir -p /app/Encoded_Faces && \
     chown -R appuser:appgroup /app/Encoded_Faces
 
-# Make start script executable
-RUN chmod +x start.sh
+# Copy and set permissions for start script
+COPY start.sh .
+RUN chmod +x start.sh && \
+    chown appuser:appgroup start.sh
 
 # Switch to non-root user
 USER appuser
