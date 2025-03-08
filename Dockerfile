@@ -30,39 +30,39 @@ RUN chown -R appuser:appgroup /app
 RUN mkdir -p /app/Encoded_Faces && \
     chown -R appuser:appgroup /app/Encoded_Faces
 
-# Create a default supervisord.conf if it doesn't exist
+# Create a default supervisord.conf
 RUN mkdir -p /etc/supervisor/conf.d/
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf || echo "[supervisord]
-nodaemon=true
-user=root
-logfile=/var/log/supervisor/supervisord.log
-pidfile=/var/run/supervisord.pid
-
-[program:uvicorn]
-command=uvicorn app.main:app --host 0.0.0.0 --port 8000
-directory=/app
-user=appuser
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/supervisor/uvicorn.err.log
-stdout_logfile=/var/log/supervisor/uvicorn.out.log
-startsecs=10
-
-[program:celery]
-command=celery -A face_detection worker --loglevel=info
-directory=/app
-user=appuser
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/supervisor/celery.err.log
-stdout_logfile=/var/log/supervisor/celery.out.log
-startsecs=10
-
-[program:tail]
-command=tail -f /dev/null
-user=appuser
-autostart=true
-autorestart=true" > /etc/supervisor/conf.d/supervisord.conf
+RUN echo '[supervisord]\n\
+nodaemon=true\n\
+user=root\n\
+logfile=/var/log/supervisor/supervisord.log\n\
+pidfile=/var/run/supervisord.pid\n\
+\n\
+[program:uvicorn]\n\
+command=uvicorn app.main:app --host 0.0.0.0 --port 8000\n\
+directory=/app\n\
+user=appuser\n\
+autostart=true\n\
+autorestart=true\n\
+stderr_logfile=/var/log/supervisor/uvicorn.err.log\n\
+stdout_logfile=/var/log/supervisor/uvicorn.out.log\n\
+startsecs=10\n\
+\n\
+[program:celery]\n\
+command=celery -A face_detection worker --loglevel=info\n\
+directory=/app\n\
+user=appuser\n\
+autostart=true\n\
+autorestart=true\n\
+stderr_logfile=/var/log/supervisor/celery.err.log\n\
+stdout_logfile=/var/log/supervisor/celery.out.log\n\
+startsecs=10\n\
+\n\
+[program:tail]\n\
+command=tail -f /dev/null\n\
+user=appuser\n\
+autostart=true\n\
+autorestart=true' > /etc/supervisor/conf.d/supervisord.conf
 
 # Create directory for supervisor logs
 RUN mkdir -p /var/log/supervisor && chown -R appuser:appgroup /var/log/supervisor
