@@ -11,7 +11,7 @@ from minio import Minio
 MINIO_ENDPOINT = "119.59.99.192:9000"
 MINIO_ACCESS_KEY = "sut-skin"
 MINIO_SECRET_KEY = "sut-skin-2024"
-BUCKET_NAME = "test-where-my-images"
+BUCKET_NAME = "where-my-images"
 
 # Initialize MinIO client
 minio_client = Minio(
