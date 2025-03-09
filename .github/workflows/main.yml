@@ -9,9 +9,13 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 60  # Increase timeout to 60 minutes
     
     steps:
     - uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
 
     - name: Login to Docker Hub
       uses: docker/login-action@v1
@@ -19,14 +23,9 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Set up Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-
     - name: Build and push with Docker Compose
       run: |
-        docker-compose build
+        docker-compose build --parallel
         docker-compose push
 
     - name: Copy files to server
@@ -38,6 +37,7 @@ jobs:
         source: "Dockerfile,docker-compose.yml,requirements.txt,*.py,*.sh,Upload_images/*,utils/*"
         target: "/home/where-my-images/app"
         strip_components: 0
+        timeout: 600s  # Increase SCP timeout to 10 minutes
 
     - name: Deploy to server
       uses: appleboy/ssh-action@master
@@ -49,3 +49,4 @@ jobs:
           cd /home/where-my-images/app
           docker compose down
           docker compose up -d
+        timeout: 600s  # Increase SSH timeout to 10 minutes
