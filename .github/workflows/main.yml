@@ -23,31 +23,10 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push with Docker Compose
+    - name: Build and push Docker image
       run: |
-        docker compose build --parallel
-        docker compose push
-
-    - name: Prepare deployment directory
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        password: ${{ secrets.SERVER_PASSWORD }}
-        script: |
-          mkdir -p /home/where-my-images/app
-          rm -rf /home/where-my-images/app/*
-
-    - name: Copy files to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        password: ${{ secrets.SERVER_PASSWORD }}
-        source: "."
-        target: "/home/where-my-images/app"
-        strip_components: 0
-        timeout: 600s
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/validate-image:latest .
+        docker push ${{ secrets.DOCKER_USERNAME }}/validate-image:latest
 
     - name: Deploy to server
       uses: appleboy/ssh-action@master
@@ -57,7 +36,7 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         script: |
           cd /home/where-my-images/app
-          chmod +x start.sh
+          docker compose pull
           docker compose down
           docker compose up -d
         timeout: 600s
