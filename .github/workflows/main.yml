@@ -9,7 +9,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # Increase timeout to 60 minutes
+    timeout-minutes: 60
     
     steps:
     - uses: actions/checkout@v2
@@ -28,6 +28,16 @@ jobs:
         docker compose build --parallel
         docker compose push
 
+    - name: Prepare deployment directory
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        password: ${{ secrets.SERVER_PASSWORD }}
+        script: |
+          mkdir -p /home/where-my-images/app
+          rm -rf /home/where-my-images/app/*
+
     - name: Copy files to server
       uses: appleboy/scp-action@master
       with:
@@ -37,7 +47,7 @@ jobs:
         source: "."
         target: "/home/where-my-images/app"
         strip_components: 0
-        timeout: 600s  # Increase SCP timeout to 10 minutes
+        timeout: 600s
 
     - name: Deploy to server
       uses: appleboy/ssh-action@master
@@ -47,6 +57,7 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         script: |
           cd /home/where-my-images/app
+          chmod +x start.sh
           docker compose down
           docker compose up -d
-        timeout: 600s  # Increase SSH timeout to 10 minutes
+        timeout: 600s
