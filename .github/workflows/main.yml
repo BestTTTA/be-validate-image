@@ -2,94 +2,41 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  build-and-test:
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest
-
-    - name: Create .env file
-      run: |
-        echo "MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}" >> .env
-        echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}" >> .env
-        echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}" >> .env
-        echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
-        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
-
-    - name: Build Docker image
-      run: |
-        docker build -t bestbest/be-validate-image:v1.0.2 .
+    - uses: actions/checkout@v2
 
     - name: Login to Docker Hub
-      if: github.ref == 'refs/heads/main'
-      uses: docker/login-action@v3
+      uses: docker/login-action@v1
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-    - name: Push to Docker Hub
-      if: github.ref == 'refs/heads/main'
+    - name: Set up Docker Compose
       run: |
-        docker push bestbest/be-validate-image:v1.0.2
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
 
-    - name: Deploy to production
-      if: github.ref == 'refs/heads/main'
-      uses: appleboy/ssh-action@v1.0.2
+    - name: Build and push with Docker Compose
+      run: |
+        docker-compose build
+        docker-compose push
+
+    - name: Deploy to server
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
-        password: ${{ secrets.SERVER_PASSWORD }}
-        port: 22
+        key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
-          # Stop and remove existing container
-          docker rm -f be-validate-image || true
-          
-          # Pull the latest image
-          docker pull bestbest/be-validate-image:v1.0.2
-          
-          # Create .env file with secrets
-          cat > .env << EOL
-          MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }}
-          MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
-          MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }}
-          BUCKET_NAME=${{ secrets.BUCKET_NAME }}
-          REDIS_HOST=${{ secrets.REDIS_HOST }}
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          EOL
-          
-          # Run container with environment variables from file
-          docker run -d --name be-validate-image \
-            --restart unless-stopped \
-            -p 1080:8000 \
-            --env-file .env \
-            bestbest/be-validate-image:v1.0.2
-          
-          # Check if container is running
-          sleep 5
-          if ! docker ps | grep -q be-validate-image; then
-            echo "Container failed to start. Checking logs:"
-            docker logs be-validate-image
-            exit 1
-          fi
-          
-          echo "Deployment completed successfully"
-          
-          # Check logs for any errors
-          docker logs be-validate-image | grep -i error || true
+          cd /home/where-my-images/app
+          docker-compose down
+          docker-compose pull
+          docker-compose up -d
