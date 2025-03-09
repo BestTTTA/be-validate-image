@@ -11,7 +11,7 @@ from minio import Minio
 MINIO_ENDPOINT = "119.59.99.192:9000"
 MINIO_ACCESS_KEY = "sut-skin"
 MINIO_SECRET_KEY = "sut-skin-2024"
-BUCKET_NAME = "where-my-images"
+BUCKET_NAME = "test-where-my-images"
 
 # Initialize MinIO client
 minio_client = Minio(
@@ -36,47 +36,41 @@ def convert_image_to_base64(image_path):
         return img_str
 
 def check_face(input_image_path):
-    """Check if a face in the input image matches any faces in the database.
-    
-    Args:
-        input_image_path (str): Path to the input image to check
-        
-    Returns:
-        list or str: List of base64 encoded images, empty if no matches found,
-                     'NO_FACE_FOUND' if no faces detected in input image
-    """
-    # Convert input path to absolute path if it's relative
     input_image_path = os.path.abspath(input_image_path)
     print(f"🔍 กำลังค้นหาภาพที่ตรงกับ {input_image_path}...")
     
-    # Search for matching faces using pre-encoded data
     matched_images = search_face(input_image_path)
     
-    # If no faces were detected in the input image
     if matched_images == "NO_FACE_FOUND":
         print("❌ ไม่พบใบหน้าในภาพที่อัปโหลด")
         return "NO_FACE_FOUND"
     
-    # Convert matched images to base64
     base64_images = []
     if matched_images:
         print("✅ พบภาพที่ตรงกัน:")
         for img_path in matched_images:
             print(f" - {img_path}")
             try:
-                # Create a temporary file to store the MinIO object
-                temp_file_path = f"temp_minio_{os.path.basename(img_path)}"
+                # Get the original filename (without _face_N suffix)
+                original_filename = '_'.join(img_path.split('_')[:-2])  # Remove _face_N
+                temp_file_path = f"temp_minio_{original_filename}"
+                
+                # Try to get the original image directly
                 try:
-                    # Download the image from MinIO
-                    minio_client.fget_object(BUCKET_NAME, img_path, temp_file_path)
-                    
-                    # Convert the downloaded image to base64
+                    print(f"Trying path: {original_filename}")
+                    minio_client.fget_object(BUCKET_NAME, original_filename, temp_file_path)
                     base64_img = convert_image_to_base64(temp_file_path)
                     base64_images.append(base64_img)
-                finally:
-                    # Clean up the temporary file
+                    print(f"✅ Successfully downloaded from path: {original_filename}")
+                except Exception as e:
+                    print(f"Failed to download image: {str(e)}")
                     if os.path.exists(temp_file_path):
                         os.remove(temp_file_path)
+                    continue
+
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
+
             except Exception as e:
                 print(f"Error processing MinIO image: {e}")
     else:

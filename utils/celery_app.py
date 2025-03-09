@@ -25,7 +25,7 @@ logger.addHandler(ch)
 logger.propagate = True
 
 
-REDIS_HOST = 'redis'
+REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 REDIS_DB = 0
 
@@ -44,29 +44,13 @@ celery_app = Celery('face_detection',
                     backend=redis_url,
                     include=['Upload_images.router'])  # Add this line
 
-celery_app.conf.update(
-    broker_connection_retry_on_startup=True,  # Add this line
-    task_serializer='pickle',
-    accept_content=['pickle', 'json'],
-    result_serializer='pickle',
-    task_track_started=True,
-    task_time_limit=300,
-    worker_max_tasks_per_child=100,
-    worker_prefetch_multiplier=1,
-    task_ignore_result=False,
-    task_store_errors_even_if_ignored=True,
-    worker_redirect_stdouts=False,
-    worker_log_format='[%(asctime)s: %(levelname)s/%(processName)s] %(message)s',
-    worker_task_log_format='[%(asctime)s: %(levelname)s/%(processName)s][%(task_name)s(%(task_id)s)] %(message)s'
-)
-
 # Optional configurations
 celery_app.conf.update(
     task_serializer='pickle',
     accept_content=['pickle', 'json'],  # Allows pickle for numpy array serialization
     result_serializer='pickle',
     task_track_started=True,
-    task_time_limit=300,  # 5 minutes max
+    task_time_limit=7600,  # 5 minutes max
     worker_max_tasks_per_child=100,
     worker_prefetch_multiplier=1,
     task_ignore_result=False,  # Enable task results

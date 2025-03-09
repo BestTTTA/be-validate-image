@@ -36,6 +36,26 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         script: |
           cd /home/where-my-images/app
+          cat > docker-compose.yml << 'EOL'
+          version: '3.8'
+          services:
+            app:
+              image: ${{ secrets.DOCKER_USERNAME }}/validate-image:latest
+              ports:
+                - "1080:8000"
+              depends_on:
+                - redis
+              environment:
+                - REDIS_HOST=redis
+                - REDIS_PORT=6379
+              restart: always
+
+            redis:
+              image: redis:latest
+              ports:
+                - "6379:6379"
+              restart: always
+          EOL
           docker compose pull
           docker compose down
           docker compose up -d

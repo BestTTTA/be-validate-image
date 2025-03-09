@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   app:
-    image: test
+    image: bestbest/validate-image:latest
     ports:
       - "1080:8000"
     depends_on:
