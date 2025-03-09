@@ -34,7 +34,7 @@ jobs:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         password: ${{ secrets.SERVER_PASSWORD }}
-        source: "Dockerfile,docker-compose.yml,requirements.txt,*.py,*.sh,Upload_images/*,utils/*"
+        source: "."
         target: "/home/where-my-images/app"
         strip_components: 0
         timeout: 600s  # Increase SCP timeout to 10 minutes
